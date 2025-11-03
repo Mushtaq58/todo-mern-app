@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  mongodb-jenkins:
+    image: mongo:latest
+    container_name: mongodb-jenkins
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongodb-jenkins-data:/data/db
+    networks:
+      - mern-jenkins-network
+
+  backend-jenkins:
+    image: node:18-alpine
+    container_name: backend-jenkins
+    working_dir: /app
+    volumes:
+      - ./backend:/app
+    ports:
+      - "5001:5000"
+    environment:
+      - MONGO_URI=mongodb://mongodb-jenkins:27017/todo-app
+      - JWT_SECRET=your_secret_key_here
+      - PORT=5000
+    command: sh -c "npm install && npm start"
+    depends_on:
+      - mongodb-jenkins
+    networks:
+      - mern-jenkins-network
+
+  frontend-jenkins:
+    image: node:18-alpine
+    container_name: frontend-jenkins
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+    ports:
+      - "3001:3000"
+    environment:
+      - REACT_APP_API_URL=http://13.60.156.204:5001
+    command: sh -c "npm install && npm start"
+    depends_on:
+      - backend-jenkins
+    networks:
+      - mern-jenkins-network
+
+volumes:
+  mongodb-jenkins-data:
+
+networks:
+  mern-jenkins-network:
+    driver: bridge
